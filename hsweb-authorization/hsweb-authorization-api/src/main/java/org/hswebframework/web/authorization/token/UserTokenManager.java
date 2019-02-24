@@ -1,5 +1,5 @@
 /*
- *  Copyright 2016 http://www.hswebframework.org
+ *  Copyright 2019 http://www.hswebframework.org
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -20,6 +20,7 @@ package org.hswebframework.web.authorization.token;
 
 import java.util.List;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 
 /**
  * 用户令牌管理器,用于管理用户令牌
@@ -137,4 +138,5 @@ public interface UserTokenManager {
      * @see this#signOutByToken(String)
      */
     void checkExpiredToken();
+
 }

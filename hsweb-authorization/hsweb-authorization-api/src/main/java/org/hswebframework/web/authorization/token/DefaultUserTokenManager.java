@@ -1,5 +1,5 @@
 /*
- *  Copyright 2016 http://www.hswebframework.org
+ *  Copyright 2019 http://www.hswebframework.org
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@
 
 package org.hswebframework.web.authorization.token;
 
+import lombok.Getter;
+import lombok.Setter;
 import org.hswebframework.web.authorization.exception.AccessDenyException;
 import org.hswebframework.web.authorization.token.event.UserTokenChangedEvent;
 import org.hswebframework.web.authorization.token.event.UserTokenCreatedEvent;
@@ -30,6 +32,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.function.Consumer;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
@@ -43,6 +46,12 @@ public class DefaultUserTokenManager implements UserTokenManager {
     protected final ConcurrentMap<String, SimpleUserToken> tokenStorage;
 
     protected final ConcurrentMap<String, Set<String>> userStorage;
+
+
+    @Getter
+    @Setter
+    private Map<String, AllopatricLoginMode> allopatricLoginModes = new HashMap<>();
+
 
     public DefaultUserTokenManager() {
         this(new ConcurrentHashMap<>(256));
@@ -106,9 +115,14 @@ public class DefaultUserTokenManager implements UserTokenManager {
     @Override
     public List<UserToken> getByUserId(String userId) {
         if (userId == null) {
-            return Collections.emptyList();
+            return new ArrayList<>();
         }
-        return getUserToken(userId)
+        Set<String> tokens = getUserToken(userId);
+        if (tokens.isEmpty()) {
+            userStorage.remove(userId);
+            return new ArrayList<>();
+        }
+        return tokens
                 .stream()
                 .map(tokenStorage::get)
                 .filter(Objects::nonNull)
@@ -121,7 +135,7 @@ public class DefaultUserTokenManager implements UserTokenManager {
             return false;
         }
         for (UserToken userToken : getByUserId(userId)) {
-            if (userToken.isEffective()) {
+            if (userToken.isNormal()) {
                 return true;
             }
         }
@@ -180,7 +194,8 @@ public class DefaultUserTokenManager implements UserTokenManager {
                 Set<String> tokens = getUserToken(userId);
                 if (!tokens.isEmpty()) {
                     tokens.remove(token);
-                } else {
+                }
+                if (tokens.isEmpty()) {
                     userStorage.remove(tokenObject.getUserId());
                 }
             }
@@ -225,24 +240,28 @@ public class DefaultUserTokenManager implements UserTokenManager {
         SimpleUserToken detail = new SimpleUserToken(userId, token);
         detail.setType(type);
         detail.setMaxInactiveInterval(maxInactiveInterval);
-
-        if (allopatricLoginMode == AllopatricLoginMode.deny) {
+        AllopatricLoginMode mode = allopatricLoginModes.getOrDefault(type, allopatricLoginMode);
+        if (mode == AllopatricLoginMode.deny) {
             boolean hasAnotherToken = getByUserId(userId)
                     .stream()
+                    .filter(userToken -> type.equals(userToken.getType()))
                     .map(SimpleUserToken.class::cast)
                     .peek(this::checkTimeout)
-                    .anyMatch(UserToken::isEffective);
+                    .anyMatch(UserToken::isNormal);
             if (hasAnotherToken) {
                 throw new AccessDenyException("该用户已在其他地方登陆");
             }
-        } else if (allopatricLoginMode == AllopatricLoginMode.offlineOther) {
+        } else if (mode == AllopatricLoginMode.offlineOther) {
             //将在其他地方登录的用户设置为离线
             List<UserToken> oldToken = getByUserId(userId);
             for (UserToken userToken : oldToken) {
-                changeTokenState(userToken.getToken(), TokenState.offline);
+                //相同的tokenType才让其下线
+                if (type.equals(userToken.getType())) {
+                    changeTokenState(userToken.getToken(), TokenState.offline);
+                }
             }
         }
-        detail.setState(TokenState.effective);
+        detail.setState(TokenState.normal);
         tokenStorage.put(token, detail);
 
         getUserToken(userId).add(token);

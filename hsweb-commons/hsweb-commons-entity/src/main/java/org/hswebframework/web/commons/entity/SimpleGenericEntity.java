@@ -1,6 +1,6 @@
 /*
  *
- *  * Copyright 2016 http://www.hswebframework.org
+ *  * Copyright 2019 http://www.hswebframework.org
  *  *
  *  * Licensed under the Apache License, Version 2.0 (the "License");
  *  * you may not use this file except in compliance with the License.
@@ -18,6 +18,8 @@
 
 package org.hswebframework.web.commons.entity;
 
+import lombok.SneakyThrows;
+
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -27,9 +29,16 @@ import java.util.Map;
  */
 public abstract class SimpleGenericEntity<PK> implements GenericEntity<PK> {
 
+    private static final long serialVersionUID = 4546315942526096290L;
+
     private PK id;
 
     private Map<String, Object> properties;
+
+    @Override
+    public String toString() {
+        return toString((String[]) null);
+    }
 
     @Override
     public PK getId() {
@@ -75,11 +84,8 @@ public abstract class SimpleGenericEntity<PK> implements GenericEntity<PK> {
 
     @Override
     @SuppressWarnings("unchecked")
+    @SneakyThrows
     public SimpleGenericEntity<PK> clone() {
-        try {
-            return (SimpleGenericEntity) super.clone();
-        } catch (CloneNotSupportedException e) {
-            throw new RuntimeException(e);
-        }
+        return (SimpleGenericEntity) super.clone();
     }
 }

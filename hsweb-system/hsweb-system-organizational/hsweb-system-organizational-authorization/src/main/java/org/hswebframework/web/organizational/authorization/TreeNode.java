@@ -14,11 +14,12 @@ import java.util.function.Predicate;
  * @since 3.0
  */
 public class TreeNode<V> implements Serializable {
+    private static final long serialVersionUID = 1_0;
 
-    /**
-     * 父节点,根节点为{@code null}
-     */
-    private TreeNode<V> parent;
+//    /**
+//     * 父节点,根节点为{@code null}
+//     */
+//    private TreeNode<V> parent;
 
     /**
      * 节点值
@@ -31,14 +32,14 @@ public class TreeNode<V> implements Serializable {
     private int level;
 
     private Set<TreeNode<V>> children;
-
-    public TreeNode<V> getParent() {
-        return parent;
-    }
-
-    public void setParent(TreeNode<V> parent) {
-        this.parent = parent;
-    }
+//
+//    public TreeNode<V> getParent() {
+//        return parent;
+//    }
+//
+//    public void setParent(TreeNode<V> parent) {
+//        this.parent = parent;
+//    }
 
     public V getValue() {
         return value;
@@ -54,6 +55,7 @@ public class TreeNode<V> implements Serializable {
 
     public void setChildren(Set<TreeNode<V>> children) {
         this.children = children;
+        children.forEach(node -> node.setLevel(getLevel() + 1));
     }
 
     public int getLevel() {

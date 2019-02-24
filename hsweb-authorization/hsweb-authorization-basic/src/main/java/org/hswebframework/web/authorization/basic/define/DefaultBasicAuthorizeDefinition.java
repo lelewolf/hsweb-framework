@@ -6,11 +6,9 @@ import org.hswebframework.web.authorization.annotation.Authorize;
 import org.hswebframework.web.authorization.annotation.Logical;
 import org.hswebframework.web.authorization.annotation.RequiresDataAccess;
 import org.hswebframework.web.authorization.annotation.RequiresExpression;
-import org.hswebframework.web.authorization.define.AuthorizeDefinition;
-import org.hswebframework.web.authorization.define.DataAccessDefinition;
-import org.hswebframework.web.authorization.define.Phased;
-import org.hswebframework.web.authorization.define.Script;
+import org.hswebframework.web.authorization.define.*;
 
+import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -27,7 +25,7 @@ import java.util.Set;
 @NoArgsConstructor
 @AllArgsConstructor
 @ToString
-public class DefaultBasicAuthorizeDefinition implements AuthorizeDefinition {
+public class DefaultBasicAuthorizeDefinition implements AopAuthorizeDefinition {
     private boolean dataAccessControl;
 
     private String[] permissionDescription = {};
@@ -51,6 +49,10 @@ public class DefaultBasicAuthorizeDefinition implements AuthorizeDefinition {
     private DataAccessDefinition dataAccessDefinition;
 
     private Phased phased = Phased.before;
+
+    private Class targetClass;
+
+    private Method targetMethod;
 
     @Override
     public Phased getPhased() {
@@ -80,6 +82,7 @@ public class DefaultBasicAuthorizeDefinition implements AuthorizeDefinition {
         }
         message = authorize.message();
         phased = authorize.phased();
+        put(authorize.dataAccess());
     }
 
     public void put(RequiresExpression expression) {
@@ -98,6 +101,7 @@ public class DefaultBasicAuthorizeDefinition implements AuthorizeDefinition {
         }
         actions.addAll(Arrays.asList(dataAccess.action()));
         DefaultDataAccessDefinition definition = new DefaultDataAccessDefinition();
+        definition.setEntityType(dataAccess.entityType());
         definition.setPhased(dataAccess.phased());
         if (!"".equals(dataAccess.controllerBeanName())) {
             definition.setController(dataAccess.controllerBeanName());
@@ -105,6 +109,7 @@ public class DefaultBasicAuthorizeDefinition implements AuthorizeDefinition {
             definition.setController(dataAccess.getClass().getName());
         }
         dataAccessDefinition = definition;
+        dataAccessControl = true;
     }
 
 

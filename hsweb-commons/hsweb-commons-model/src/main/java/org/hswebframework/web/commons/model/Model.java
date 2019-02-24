@@ -1,5 +1,5 @@
 /*
- *  Copyright 2016 http://www.hswebframework.org
+ *  Copyright 2019 http://www.hswebframework.org
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -18,12 +18,12 @@
 
 package org.hswebframework.web.commons.model;
 
+import org.hswebframework.web.commons.bean.ValidateBean;
+
 import java.io.Serializable;
 
 /**
- * TODO 完成注释
- *
  * @author zhouhao
  */
-public interface Model extends Serializable {
+public interface Model extends ValidateBean {
 }

@@ -1,6 +1,6 @@
 /*
  *
- *  * Copyright 2016 http://www.hswebframework.org
+ *  * Copyright 2019 http://www.hswebframework.org
  *  *
  *  * Licensed under the Apache License, Version 2.0 (the "License");
  *  * you may not use this file except in compliance with the License.
@@ -18,6 +18,9 @@
 
 package org.hswebframework.web.commons.entity;
 
+import org.hswebframework.web.commons.bean.Bean;
+import org.hswebframework.web.commons.bean.ValidateBean;
+
 import java.io.Serializable;
 
 /**
@@ -28,7 +31,10 @@ import java.io.Serializable;
  * @see GenericEntity
  * @see TreeSupportEntity
  * @see TreeSortSupportEntity
+ * @see Bean
  * @since 3.0
  */
-public interface Entity extends Serializable {
+public interface Entity extends ValidateBean {
+
+
 }

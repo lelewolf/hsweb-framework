@@ -35,9 +35,11 @@ public class JwtTokenParser implements UserTokenParser {
             if (!StringUtils.isEmpty(headerToken)) {
                 if (headerToken.contains(" ")) {
                     String[] auth = headerToken.split("[ ]");
-                    // if(auth[0].equalsIgnoreCase("jwt")){
-                    headerToken = auth[1];
-                    //}
+                    if (auth[0].equalsIgnoreCase("jwt") || auth[0].equalsIgnoreCase("Bearer")) {
+                        headerToken = auth[1];
+                    }else{
+                        return null;
+                    }
                 }
             }
         }
@@ -52,7 +54,7 @@ public class JwtTokenParser implements UserTokenParser {
             } catch (ExpiredJwtException e) {
                 return null;
             } catch (Exception e) {
-                logger.error("parse token [{}] error", headerToken, e);
+                logger.debug("parse token [{}] error", headerToken, e);
                 return null;
             }
         }

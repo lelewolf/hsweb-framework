@@ -1,5 +1,5 @@
 /*
- *  Copyright 2016 http://www.hswebframework.org
+ *  Copyright 2019 http://www.hswebframework.org
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -21,9 +21,8 @@ package org.hswebframework.web.dictionary.starter;
 import com.alibaba.fastjson.JSON;
 import com.alibaba.fastjson.JSONObject;
 import org.hswebframework.web.commons.entity.DataStatus;
-import org.hswebframework.web.entity.dictionary.DictionaryEntity;
-import org.hswebframework.web.entity.dictionary.DictionaryItemEntity;
-import org.hswebframework.web.entity.dictionary.SimpleDictionaryItemEntity;
+import org.hswebframework.web.dictionary.api.entity.DictionaryEntity;
+import org.hswebframework.web.dictionary.api.entity.DictionaryItemEntity;
 import org.hswebframework.web.starter.convert.FastJsonGenericHttpMessageConverter;
 import org.hswebframework.web.tests.SimpleWebApplicationTests;
 import org.junit.Assert;
@@ -31,6 +30,7 @@ import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 /**

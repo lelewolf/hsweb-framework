@@ -13,8 +13,10 @@ import org.hswebframework.web.tests.SimpleWebApplicationTests;
 import org.junit.Assert;
 import org.junit.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.sql.Array;
 import java.sql.JDBCType;
 import java.sql.SQLException;
 import java.util.Arrays;
@@ -44,7 +46,7 @@ public class SimpleDynamicFormServiceTest extends SimpleWebApplicationTests {
     private SqlExecutor        sqlExecutor;
 
     @Test
-    @Transactional
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     public void testDeploy() throws SQLException {
         DynamicFormEntity form = entityFactory.newInstance(DynamicFormEntity.class);
         form.setName("test");
@@ -59,19 +61,13 @@ public class SimpleDynamicFormServiceTest extends SimpleWebApplicationTests {
                 "{\"target\":\"s_dyn_form\",\"alias\":\"form\",\"condition\":\"form.u_id=f_test.id\"}" +
                 "]");
 
-        DynamicFormColumnEntity column_id = entityFactory.newInstance(DynamicFormColumnEntity.class);
-        column_id.setColumnName("id");
-        column_id.setName("ID");
-        column_id.setJavaType("string");
-        column_id.setJdbcType(JDBCType.VARCHAR.getName());
-        column_id.setLength(32);
         DynamicFormColumnEntity column_name = entityFactory.newInstance(DynamicFormColumnEntity.class);
         column_name.setName("姓名");
         column_name.setColumnName("name");
         column_name.setJavaType("string");
         column_name.setJdbcType(JDBCType.VARCHAR.getName());
         column_name.setLength(32);
-
+        column_name.setValidator(Arrays.asList("{\"type\":\"NotBlank\",\"groups\":[\"create\"],\"message\":\"姓名不能为空\"}"));
         DynamicFormColumnEntity column_age = entityFactory.newInstance(DynamicFormColumnEntity.class);
         column_age.setName("年龄");
         column_age.setColumnName("age");
@@ -84,7 +80,7 @@ public class SimpleDynamicFormServiceTest extends SimpleWebApplicationTests {
         DynamicFormColumnBindEntity bindEntity = new DynamicFormColumnBindEntity();
 
         bindEntity.setForm(form);
-        bindEntity.setColumns(Arrays.asList(column_id, column_name, column_age));
+        bindEntity.setColumns(Arrays.asList(column_name, column_age));
 
         String id = dynamicFormService.saveOrUpdate(bindEntity);
 
@@ -93,7 +89,6 @@ public class SimpleDynamicFormServiceTest extends SimpleWebApplicationTests {
 
         dynamicFormOperationService.insert(form.getId(), new HashMap<String, Object>() {
             {
-                put("id", id);
                 put("name", "张三");
                 put("age", 10);
             }

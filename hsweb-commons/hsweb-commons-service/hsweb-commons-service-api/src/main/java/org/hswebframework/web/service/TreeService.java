@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 http://www.hswebframework.org
+ * Copyright 2019 http://www.hswebframework.org
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,13 @@ import java.util.List;
  * @since 3.0
  */
 public interface TreeService<E extends TreeSupportEntity, PK> extends Service {
+
+    /**
+     * 查询所有父节点
+     * @param childId 子节点id
+     * @return 父节点集合
+     */
+    List<E> selectParentNode(PK childId);
 
     /**
      * 根据父节点id获取子节点数据

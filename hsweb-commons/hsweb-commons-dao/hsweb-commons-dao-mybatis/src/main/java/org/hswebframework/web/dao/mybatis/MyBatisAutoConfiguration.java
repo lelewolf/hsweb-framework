@@ -1,6 +1,6 @@
 /*
  *
- *  * Copyright 2016 http://www.hswebframework.org
+ *  * Copyright 2019 http://www.hswebframework.org
  *  *
  *  * Licensed under the Apache License, Version 2.0 (the "License");
  *  * you may not use this file except in compliance with the License.
@@ -27,13 +27,10 @@ import org.hswebframework.web.commons.entity.factory.EntityFactory;
 import org.hswebframework.web.dao.mybatis.builder.EasyOrmSqlBuilder;
 import org.hswebframework.web.dao.mybatis.dynamic.DynamicDataSourceSqlSessionFactoryBuilder;
 import org.hswebframework.web.dao.mybatis.dynamic.DynamicSpringManagedTransaction;
-import org.hswebframework.web.dao.mybatis.utils.ResultMapsUtils;
 import org.mybatis.spring.SqlSessionFactoryBean;
 import org.mybatis.spring.boot.autoconfigure.SpringBootVFS;
 import org.mybatis.spring.transaction.SpringManagedTransactionFactory;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
@@ -47,9 +44,7 @@ import javax.sql.DataSource;
 
 @Configuration
 @EnableConfigurationProperties(MybatisProperties.class)
-@ConditionalOnClass({SqlSessionFactory.class, SqlSessionFactoryBean.class})
 public class MyBatisAutoConfiguration {
-
 
     @Autowired(required = false)
     private Interceptor[] interceptors;
@@ -71,10 +66,10 @@ public class MyBatisAutoConfiguration {
     }
 
     @Bean(name = "sqlSessionFactory")
-    public SqlSessionFactory sqlSessionFactory(@Qualifier("dataSource") DataSource dataSource) throws Exception {
+    @Primary
+    public SqlSessionFactory sqlSessionFactory(DataSource dataSource) throws Exception {
         SqlSessionFactoryBean factory = new SqlSessionFactoryBean();
         MybatisProperties mybatisProperties = this.mybatisProperties();
-
         if (null != entityFactory) {
             factory.setObjectFactory(new MybatisEntityFactory(entityFactory));
         }
@@ -109,14 +104,20 @@ public class MyBatisAutoConfiguration {
         }
         factory.setTypeHandlersPackage(typeHandlers);
         factory.setMapperLocations(mybatisProperties.resolveMapperLocations());
+
         SqlSessionFactory sqlSessionFactory = factory.getObject();
-        ResultMapsUtils.setSqlSession(sqlSessionFactory);
+        MybatisUtils.sqlSession = sqlSessionFactory;
+
+        EnumDictHandlerRegister.typeHandlerRegistry = sqlSessionFactory.getConfiguration().getTypeHandlerRegistry();
+        EnumDictHandlerRegister.register("org.hswebframework.web;" + mybatisProperties.getTypeHandlersPackage());
+
         try {
             Class.forName("javax.persistence.Table");
             EasyOrmSqlBuilder.getInstance().useJpa = mybatisProperties.isUseJpa();
         } catch (@SuppressWarnings("all") Exception ignore) {
         }
         EasyOrmSqlBuilder.getInstance().entityFactory = entityFactory;
+
         return sqlSessionFactory;
     }
 

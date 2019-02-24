@@ -1,6 +1,6 @@
 /*
  *
- *  * Copyright 2016 http://www.hswebframework.org
+ *  * Copyright 2019 http://www.hswebframework.org
  *  *
  *  * Licensed under the Apache License, Version 2.0 (the "License");
  *  * you may not use this file except in compliance with the License.
@@ -29,14 +29,14 @@ import org.hswebframework.web.authorization.token.TokenState;
 public class UnAuthorizedException extends RuntimeException {
     private static final long serialVersionUID = 2422918455013900645L;
 
-    private TokenState state;
+    private final TokenState state;
 
     public UnAuthorizedException() {
         this(TokenState.expired);
     }
 
     public UnAuthorizedException(TokenState state) {
-        this("{un_authorization}", state);
+        this(state.getText(), state);
     }
 
     public UnAuthorizedException(String message, TokenState state) {

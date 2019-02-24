@@ -1,5 +1,5 @@
 /*
- *  Copyright 2016 http://www.hswebframework.org
+ *  Copyright 2019 http://www.hswebframework.org
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -57,7 +57,7 @@ public abstract class AbstractAuthorizationEvent extends ApplicationEvent implem
     }
 
     @SuppressWarnings("unchecked")
-    protected <T> Optional<T> getParameter(String name) {
+    public  <T> Optional<T> getParameter(String name) {
         return Optional.ofNullable((T) parameterGetter.apply(name));
     }
 

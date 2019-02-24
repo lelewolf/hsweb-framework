@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 http://www.hswebframework.org
+ * Copyright 2019 http://www.hswebframework.org
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -77,6 +77,9 @@ public interface QueryController<E, PK, Q extends Entity> {
     @GetMapping("/no-paging")
     @ApiOperation(value = "不分页动态查询", responseReference = "get")
     default ResponseMessage<List<E>> listNoPaging(Q param) {
+        if (param instanceof QueryParamEntity) {
+            ((QueryParamEntity) param).setPaging(false);
+        }
         return ok(getService().select(param));
     }
 

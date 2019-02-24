@@ -1,5 +1,5 @@
 /*
- *  Copyright 2016 http://www.hswebframework.org
+ *  Copyright 2019 http://www.hswebframework.org
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -90,6 +90,9 @@ public class SimpleOAuth2Request implements OAuth2Request {
 
     @Override
     public OAuth2Request param(String name, Object value) {
+        if (value == null) {
+            return this;
+        }
         request.param(name, String.valueOf(value));
         return this;
     }
@@ -102,6 +105,9 @@ public class SimpleOAuth2Request implements OAuth2Request {
 
     @Override
     public OAuth2Request header(String name, String value) {
+        if (value == null) {
+            return this;
+        }
         request.header(name, value);
         return this;
     }

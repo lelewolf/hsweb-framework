@@ -1,6 +1,6 @@
 /*
  *
- *  * Copyright 2016 http://www.hswebframework.org
+ *  * Copyright 2019 http://www.hswebframework.org
  *  *
  *  * Licensed under the Apache License, Version 2.0 (the "License");
  *  * you may not use this file except in compliance with the License.
@@ -79,7 +79,7 @@ public interface DefaultDSLQueryService<E, PK>
         query.setSingleExecutor((param) -> {
             param.doPaging(0, 1);
             List<PO> list = dao.query(param);
-            if (null == list || list.size() == 0) {
+            if (null == list || list.isEmpty()) {
                 return null;
             } else {
                 return list.get(0);

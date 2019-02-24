@@ -1,17 +1,24 @@
 package org.hswebframework.web.authorization.starter;
 
+import io.swagger.annotations.ApiModelProperty;
 import lombok.extern.slf4j.Slf4j;
+import org.hswebframework.utils.ClassUtils;
 import org.hswebframework.web.authorization.Permission;
+import org.hswebframework.web.authorization.define.AopAuthorizeDefinition;
 import org.hswebframework.web.authorization.define.AuthorizeDefinition;
 import org.hswebframework.web.authorization.define.AuthorizeDefinitionInitializedEvent;
 import org.hswebframework.web.commons.entity.DataStatus;
 import org.hswebframework.web.commons.entity.factory.EntityFactory;
 import org.hswebframework.web.entity.authorization.ActionEntity;
+import org.hswebframework.web.entity.authorization.OptionalField;
 import org.hswebframework.web.entity.authorization.PermissionEntity;
 import org.hswebframework.web.service.authorization.PermissionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationListener;
+import org.springframework.util.ReflectionUtils;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -20,10 +27,10 @@ import java.util.stream.Stream;
 @Slf4j
 public class AutoSyncPermission implements ApplicationListener<AuthorizeDefinitionInitializedEvent> {
 
-    @Autowired
+
     private PermissionService permissionService;
 
-    @Autowired
+
     private EntityFactory entityFactory;
 
     private static Map<String, String> actionDescMapping = new HashMap<>();
@@ -39,6 +46,16 @@ public class AutoSyncPermission implements ApplicationListener<AuthorizeDefiniti
         actionDescMapping.put(Permission.ACTION_EXPORT, "导出");
         actionDescMapping.put(Permission.ACTION_IMPORT, "导入");
 
+    }
+
+    @Autowired
+    public void setPermissionService(PermissionService permissionService) {
+        this.permissionService = permissionService;
+    }
+
+    @Autowired
+    public void setEntityFactory(EntityFactory entityFactory) {
+        this.entityFactory = entityFactory;
     }
 
     @Override
@@ -91,6 +108,34 @@ public class AutoSyncPermission implements ApplicationListener<AuthorizeDefiniti
             }
             //创建permission
             PermissionEntity entity = entityFactory.newInstance(PermissionEntity.class);
+            if (tmp instanceof AopAuthorizeDefinition) {
+                AopAuthorizeDefinition aopAuthorizeDefinition = ((AopAuthorizeDefinition) tmp);
+                Class type = aopAuthorizeDefinition.getTargetClass();
+                Class genType = entityFactory.getInstanceType(ClassUtils.getGenericType(type));
+                List<OptionalField> optionalFields = new ArrayList<>();
+                entity.setOptionalFields(optionalFields);
+                if (genType != Object.class) {
+                    List<Field> fields = new ArrayList<>();
+
+                    ReflectionUtils.doWithFields(genType, fields::add, field -> (field.getModifiers() & Modifier.STATIC) == 0);
+
+                    for (Field field : fields) {
+                        if ("id".equals(field.getName())) {
+                            continue;
+                        }
+                        ApiModelProperty property = field.getAnnotation(ApiModelProperty.class);
+                        OptionalField optionalField = new OptionalField();
+                        optionalField.setName(field.getName());
+                        if (null != property) {
+                            if (property.hidden()) {
+                                continue;
+                            }
+                            optionalField.setDescribe(property.value());
+                        }
+                        optionalFields.add(optionalField);
+                    }
+                }
+            }
             entity.setId(permissionId);
             entity.setName(tmp.getPermissionDescription().length > 0 ? tmp.getPermissionDescription()[0] : permissionId);
             entity.setActions(new ArrayList<>(actionEntities));
@@ -140,4 +185,5 @@ public class AutoSyncPermission implements ApplicationListener<AuthorizeDefiniti
         definitions.clear();
         grouping.clear();
     }
+
 }

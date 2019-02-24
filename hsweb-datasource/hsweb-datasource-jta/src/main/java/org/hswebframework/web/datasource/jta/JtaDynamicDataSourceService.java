@@ -1,5 +1,7 @@
 package org.hswebframework.web.datasource.jta;
 
+import lombok.SneakyThrows;
+import org.hswebframework.web.datasource.DatabaseType;
 import org.hswebframework.web.datasource.DynamicDataSource;
 import org.hswebframework.web.datasource.DynamicDataSourceProxy;
 import org.hswebframework.web.datasource.config.DynamicDataSourceConfigRepository;
@@ -43,10 +45,8 @@ public class JtaDynamicDataSourceService extends AbstractDynamicDataSourceServic
         this.executor = executor;
     }
 
-
-
-
     @Override
+    @SneakyThrows
     protected DataSourceCache createCache(AtomikosDataSourceConfig config) {
         AtomikosDataSourceBean atomikosDataSourceBean = new AtomikosDataSourceBean();
         config.putProperties(atomikosDataSourceBean);
@@ -54,57 +54,56 @@ public class JtaDynamicDataSourceService extends AbstractDynamicDataSourceServic
         atomikosDataSourceBean.setUniqueResourceName("dynamic_ds_" + config.getId());
         AtomicInteger successCounter = new AtomicInteger();
         CountDownLatch downLatch = new CountDownLatch(1);
-        try {
-            DataSourceCache cache = new DataSourceCache(config.hashCode(), new DynamicDataSourceProxy(config.getId(), atomikosDataSourceBean), downLatch, config) {
-                @Override
-                public void closeDataSource() {
-                    super.closeDataSource();
-                    atomikosDataSourceBean.close();
-                    XADataSource dataSource = atomikosDataSourceBean.getXaDataSource();
-                    if (dataSource instanceof Closeable) {
-                        try {
-                            ((Closeable) dataSource).close();
-                        } catch (IOException e) {
-                            logger.error("close xa datasource error", e);
-                        }
-                    } else {
-                        logger.warn("XADataSource is not instanceof Closeable!", (Object) Thread.currentThread().getStackTrace());
-                    }
-                }
-            };
-            //异步初始化
-            executor.execute(() -> {
-                try {
-                    atomikosDataSourceBean.init();
-                    successCounter.incrementAndGet();
-                    downLatch.countDown();
-                } catch (Exception e) {
-                    logger.error("init datasource {} error", config.getId(), e);
-
-                    //atomikosDataSourceBean.close();
-                }
-            });
-            //初始化状态判断
-            executor.execute(() -> {
-                try {
-                    Thread.sleep(config.getInitTimeout() * 1000L);
-                } catch (InterruptedException ignored) {
-                    logger.warn(ignored.getMessage(), ignored);
-                    Thread.currentThread().interrupt();
-                } finally {
-                    if (successCounter.get() == 0) {
-                        // 初始化超时,认定为失败
-                        logger.error("init timeout ({}ms)", config.getInitTimeout());
-                        cache.closeDataSource();
-                        if (downLatch.getCount() > 0) {
-                            downLatch.countDown();
-                        }
-                    }
-                }
-            });
-            return cache;
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        DynamicDataSourceProxy proxy = new DynamicDataSourceProxy(config.getId(), atomikosDataSourceBean);
+        if (config.getDatabaseType() != null) {
+            proxy.setDatabaseType(config.getDatabaseType());
         }
+        DataSourceCache cache = new DataSourceCache(config.hashCode(), proxy, downLatch, config) {
+            @Override
+            public void closeDataSource() {
+                super.closeDataSource();
+                atomikosDataSourceBean.close();
+                XADataSource dataSource = atomikosDataSourceBean.getXaDataSource();
+                if (dataSource instanceof Closeable) {
+                    try {
+                        ((Closeable) dataSource).close();
+                    } catch (IOException e) {
+                        logger.error("close xa datasource error", e);
+                    }
+                } else {
+                    logger.warn("XADataSource is not instanceof Closeable!", (Object) Thread.currentThread().getStackTrace());
+                }
+            }
+        };
+        //异步初始化
+        executor.execute(() -> {
+            try {
+                atomikosDataSourceBean.init();
+                successCounter.incrementAndGet();
+                downLatch.countDown();
+            } catch (Exception e) {
+                logger.error("init datasource {} error", config.getId(), e);
+                //atomikosDataSourceBean.close();
+            }
+        });
+        //初始化状态判断
+        executor.execute(() -> {
+            try {
+                Thread.sleep(config.getInitTimeout() * 1000L);
+            } catch (InterruptedException ignored) {
+                logger.warn(ignored.getMessage(), ignored);
+                Thread.currentThread().interrupt();
+            } finally {
+                if (successCounter.get() == 0) {
+                    // 初始化超时,认定为失败
+                    logger.error("init timeout ({}ms)", config.getInitTimeout());
+                    cache.closeDataSource();
+                    if (downLatch.getCount() > 0) {
+                        downLatch.countDown();
+                    }
+                }
+            }
+        });
+        return cache;
     }
 }

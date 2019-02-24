@@ -16,6 +16,8 @@ import org.hswebframework.ezorm.rdb.render.dialect.OracleRDBDatabaseMetaData;
 import org.hswebframework.ezorm.rdb.simple.SimpleDatabase;
 import org.hswebframework.web.datasource.DataSourceHolder;
 import org.hswebframework.web.datasource.DatabaseType;
+import org.hswebframework.web.datasource.annotation.UseDataSource;
+import org.hswebframework.web.datasource.exception.DataSourceNotFoundException;
 import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -28,6 +30,7 @@ import org.springframework.context.annotation.EnableAspectJAutoProxy;
 import org.springframework.jms.annotation.EnableJms;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.test.annotation.Rollback;
+import org.springframework.test.context.junit4.AbstractTransactionalJUnit4SpringContextTests;
 import org.springframework.test.context.junit4.SpringRunner;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -46,7 +49,7 @@ import java.util.Map;
  */
 @SpringBootTest(properties = "application.yml", classes = SimpleAtomikosTests.Config.class)
 @RunWith(SpringRunner.class)
-public class SimpleAtomikosTests {
+public class SimpleAtomikosTests extends AbstractTransactionalJUnit4SpringContextTests {
 
     @Configuration
     @SpringBootApplication
@@ -62,9 +65,9 @@ public class SimpleAtomikosTests {
         }
 
         public class DynDatabaseMeta extends RDBDatabaseMetaData {
-            private Map<DatabaseType, Dialect> dialectMap;
+            private Map<DatabaseType, Dialect>             dialectMap;
             private Map<DatabaseType, RDBDatabaseMetaData> metaDataMap;
-            private Map<DatabaseType, TableMetaParser> parserMap;
+            private Map<DatabaseType, TableMetaParser>     parserMap;
 
             public DynDatabaseMeta(SqlExecutor sqlExecutor) {
                 dialectMap = new HashMap<>();
@@ -121,7 +124,7 @@ public class SimpleAtomikosTests {
     private JmsTemplate jmsTemplate;
 
     @Test
-    @Rollback(false)
+    @Rollback
     public void test() throws SQLException, InterruptedException {
         new Thread(() -> {
             Object message = jmsTemplate.receiveAndConvert("test");
@@ -149,14 +152,36 @@ public class SimpleAtomikosTests {
         Assert.assertNull(DataSourceHolder.switcher().currentDataSourceId());
         Assert.assertTrue(dynDsTest.testQuery().size() > 0);
 
+        dynDsTest.findAll();
+
+        dynDsTest.query();
+
+        dynDsTest.query();
+
+        try {
+            dynDsTest.query("test123");
+            Assert.assertTrue(false);
+        } catch (DataSourceNotFoundException e) {
+        }
+
         jmsTemplate.convertAndSend("test", "hello");
         Thread.sleep(1000);
     }
 
+    public interface TestService {
+        List findAll() throws SQLException;
+    }
+
+    public static class AbstractTest implements TestService {
+        RDBDatabase database;
+
+        public List findAll() throws SQLException {
+            return database.getTable("s_user").createQuery().list();
+        }
+    }
 
     @Transactional
-    public static class DynDsTest {
-        private RDBDatabase database;
+    public static class DynDsTest extends AbstractTest {
 
         @Transactional(propagation = Propagation.NOT_SUPPORTED)
         public void testCreateTable() throws SQLException {
@@ -176,8 +201,18 @@ public class SimpleAtomikosTests {
                     .exec();
         }
 
-
         public List testQuery() throws SQLException {
+            return database.getTable("s_user").createQuery().list();
+        }
+
+
+        @UseDataSource("test_ds")
+        public List query() throws SQLException {
+            return database.getTable("s_user").createQuery().list();
+        }
+
+        @UseDataSource("${#dataSourceId}")
+        public List query(String dataSourceId) throws SQLException {
             return database.getTable("s_user").createQuery().list();
         }
     }

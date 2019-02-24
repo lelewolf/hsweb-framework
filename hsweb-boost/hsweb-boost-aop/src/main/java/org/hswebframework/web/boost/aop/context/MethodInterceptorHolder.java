@@ -1,5 +1,5 @@
 /*
- *  Copyright 2016 http://www.hswebframework.org
+ *  Copyright 2019 http://www.hswebframework.org
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -59,7 +59,7 @@ public class MethodInterceptorHolder {
         Object[] args = invocation.getArguments();
         Map<String, Object> argMap = new LinkedHashMap<>();
         for (int i = 0, len = args.length; i < len; i++) {
-            argMap.put(argNames[i] == null ? "arg" + i : argNames[i], args[i]);
+            argMap.put((argNames == null || argNames[i] == null) ? "arg" + i : argNames[i], args[i]);
         }
         return new MethodInterceptorHolder(id,
                 invocation.getMethod(),
@@ -80,7 +80,6 @@ public class MethodInterceptorHolder {
     }
 
     public MethodInterceptorHolder(String id, Method method, Object target, Map<String, Object> args) {
-        Objects.requireNonNull(id);
         Objects.requireNonNull(id);
         Objects.requireNonNull(method);
         Objects.requireNonNull(target);
@@ -118,9 +117,11 @@ public class MethodInterceptorHolder {
     public <T extends Annotation> T findAnnotation(Class<T> annClass) {
         return AopUtils.findAnnotation(target.getClass(), method, annClass);
     }
-    public MethodInterceptorContext createParamContext(){
+
+    public MethodInterceptorContext createParamContext() {
         return createParamContext(null);
     }
+
     public MethodInterceptorContext createParamContext(Object invokeResult) {
         return new MethodInterceptorContext() {
             private static final long serialVersionUID = -4102787561601219273L;
@@ -140,7 +141,7 @@ public class MethodInterceptorHolder {
                 if (args == null) {
                     return Optional.empty();
                 }
-                return Optional.of((T) args.get(name));
+                return Optional.ofNullable((T) args.get(name));
             }
 
             @Override

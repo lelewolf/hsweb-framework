@@ -3,7 +3,6 @@ package org.hswebframework.web.authorization.simple;
 import org.hswebframework.web.authorization.Authentication;
 import org.hswebframework.web.authorization.AuthenticationHolder;
 import org.hswebframework.web.authorization.AuthenticationManager;
-import org.hswebframework.web.authorization.AuthenticationSupplier;
 import org.hswebframework.web.authorization.builder.AuthenticationBuilderFactory;
 import org.hswebframework.web.authorization.builder.DataAccessConfigBuilderFactory;
 import org.hswebframework.web.authorization.simple.builder.DataAccessConfigConvert;
@@ -12,6 +11,8 @@ import org.hswebframework.web.authorization.simple.builder.SimpleDataAccessConfi
 import org.hswebframework.web.authorization.token.DefaultUserTokenManager;
 import org.hswebframework.web.authorization.token.UserTokenAuthenticationSupplier;
 import org.hswebframework.web.authorization.token.UserTokenManager;
+import org.hswebframework.web.authorization.twofactor.TwoFactorValidatorManager;
+import org.hswebframework.web.authorization.twofactor.defaults.DefaultTwoFactorValidatorManager;
 import org.hswebframework.web.convert.CustomMessageConverter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
@@ -41,7 +42,7 @@ public class DefaultAuthorizationAutoConfiguration {
     @Bean
     @ConditionalOnBean(AuthenticationManager.class)
     public UserTokenAuthenticationSupplier userTokenAuthenticationSupplier(AuthenticationManager authenticationManager) {
-        UserTokenAuthenticationSupplier supplier= new UserTokenAuthenticationSupplier(authenticationManager);
+        UserTokenAuthenticationSupplier supplier = new UserTokenAuthenticationSupplier(authenticationManager);
         AuthenticationHolder.addSupplier(supplier);
         return supplier;
     }
@@ -55,6 +56,13 @@ public class DefaultAuthorizationAutoConfiguration {
             dataAccessConfigConverts.forEach(factory::addConvert);
         }
         return factory;
+    }
+
+    @Bean
+    @ConditionalOnMissingBean(TwoFactorValidatorManager.class)
+    @ConfigurationProperties("hsweb.authorize.two-factor")
+    public DefaultTwoFactorValidatorManager defaultTwoFactorValidatorManager() {
+        return new DefaultTwoFactorValidatorManager();
     }
 
     @Bean
